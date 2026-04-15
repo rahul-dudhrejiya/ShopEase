@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema(
 // WHAT: Code that runs automatically BEFORE or AFTER certain operations
 // This is called a "pre hook" — runs BEFORE saving to database
 
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function () {
     // WHAT: Before saving user, hash their password
     // WHY: NEVER store plain text passwords
     //      If DB is hacked, attacker gets "hashed" strings, not real passwords
@@ -99,15 +99,13 @@ userSchema.pre('save', async function (next) {
     // this.isModified('password') → only hash if password was actually changed
     // WHY this check? If user updates their name/email, we don't want to re-hash
     // the already-hashed password (that would break login!)
-    if (!this.isModified('password')) {
-        return next();
-    }
+    if (!this.isModified('password')) return;
 
     // Salt rounds = 12 means bcrypt runs the hashing algorithm 2^12 = 4096 times
     // WHY 12? Balance between security and performance
     // Higher = more secure but slower. 12 is industry standard.
     this.password = await bcrypt.hash(this.password, 12);
-    next(); // WHY next()? Tell Mongoose "I'm done, proceed with saving
+
 });
 
 // INSTANCE METHODS

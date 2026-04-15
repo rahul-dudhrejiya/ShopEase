@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
+import authRoutes from './routes/authRoutes.js';
+import { errorHandler } from './middleware/errorMiddleware.js';
 
 // Load environment variables FIRST before anything else
 // WHY: All other code may need env variables (like DB URI), so load them first
@@ -47,7 +49,7 @@ app.use(cookieParser());
 
 // We'll uncomment these as we build each feature:
 // import authRoutes from './routes/authRoutes.js';
-// app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 // This means: any request to /api/auth/... goes to authRoutes
 
 
@@ -63,7 +65,7 @@ app.get('/', (req, res) => {
 // WHY at the END: Error middleware must be registered AFTER all routes
 // If any route throws an error, it "falls through" to this handler
 // We'll build this in detail later
-// app.use(errorHandler);
+app.use(errorHandler);
 
 // START SERVER
 // process.env.PORT — on Render, they assign a PORT automatically
@@ -71,5 +73,5 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
