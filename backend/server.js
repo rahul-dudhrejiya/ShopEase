@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
+import connectCloudinary from './config/cloudinary.js';
+import productRoutes from './routes/productRoutes.js';
 
 // Load environment variables FIRST before anything else
 // WHY: All other code may need env variables (like DB URI), so load them first
@@ -13,6 +15,8 @@ dotenv.config();
 // Connect to MongoDB
 // WHY here: Before starting the server, make sure DB is ready
 connectDB();
+
+connectCloudinary();
 
 // Initialize Express app
 // WHY: express() creates an application object — this IS our server
@@ -52,6 +56,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 // This means: any request to /api/auth/... goes to authRoutes
 
+app.use('/api/products', productRoutes);
 
 // ROOT ROUTE (for testing)
 app.get('/', (req, res) => {
