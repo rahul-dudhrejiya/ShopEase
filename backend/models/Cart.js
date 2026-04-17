@@ -3,7 +3,7 @@
 // Real analogy: Shopping trolley in a mall — items in it, not yet purchased
 
 import mongoose from 'mongoose';
-import Product from './Product';
+import Product from './Product.js';
 
 const cartSchema = new mongoose.Schema(
     {
@@ -18,7 +18,7 @@ const cartSchema = new mongoose.Schema(
 
         items: [
             {
-                Product: {
+                product: {
                     type: mongoose.Schema.Types.ObjectId,
                     ref: 'Product',
                     required: true,

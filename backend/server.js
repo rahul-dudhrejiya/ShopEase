@@ -7,6 +7,9 @@ import authRoutes from './routes/authRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import connectCloudinary from './config/cloudinary.js';
 import productRoutes from './routes/productRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 // Load environment variables FIRST before anything else
 // WHY: All other code may need env variables (like DB URI), so load them first
@@ -57,6 +60,10 @@ app.use('/api/auth', authRoutes);
 // This means: any request to /api/auth/... goes to authRoutes
 
 app.use('/api/products', productRoutes);
+
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // ROOT ROUTE (for testing)
 app.get('/', (req, res) => {
