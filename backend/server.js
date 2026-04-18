@@ -10,6 +10,11 @@ import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import wishlistRoutes from './routes/wishlistRoutes.js';
+import couponRoutes from './routes/couponRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+
 
 // Load environment variables FIRST before anything else
 // WHY: All other code may need env variables (like DB URI), so load them first
@@ -64,6 +69,11 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
+
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ROOT ROUTE (for testing)
 app.get('/', (req, res) => {
