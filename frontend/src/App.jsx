@@ -10,19 +10,20 @@ import { ThemeProvider } from './context/ThemeContext.jsx';
 import Navbar from './components/common/Navbar.jsx';
 import ProtectedRoute from './components/common/ProtectedRoute.jsx';
 
-// Pages
+
+// Customer Pages
 import Home from './pages/customer/Home.jsx';
 import Products from './pages/customer/Products.jsx';
+import ProductDetail from './pages/customer/ProductDetail.jsx';
 import Login from './pages/customer/Login.jsx';
 import Register from './pages/customer/Register.jsx';
+import Cart from './pages/customer/Cart.jsx';
+import Checkout from './pages/customer/Checkout.jsx';
+import Orders from './pages/customer/Orders.jsx';
+import Wishlist from './pages/customer/Wishlist.jsx';
 
-// We'll create these pages in Day 8:
-// import ProductDetail from './pages/customer/ProductDetail.jsx';
-// import Cart from './pages/customer/Cart.jsx';
-// import Orders from './pages/customer/Orders.jsx';
-// import Profile from './pages/customer/Profile.jsx';
-// import Wishlist from './pages/customer/Wishlist.jsx';
-// import Dashboard from './pages/admin/Dashboard.jsx';
+// Admin Pages
+import Dashboard from './pages/admin/Dashboard.jsx';
 
 const App = () => {
   return (
@@ -39,33 +40,36 @@ const App = () => {
               <Navbar />
 
               <Routes>
-                {/* PUBLIC ROUTES */}
+                {/* PUBLIC */}
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
+                <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* PROTECTED ROUTES — add as we build pages */}
-                {/* 
-                <Route path="/products/:id" element={<ProductDetail />} />
+                {/* CUSTOMER PROTECTED */}
                 <Route path="/cart" element={
                   <ProtectedRoute><Cart /></ProtectedRoute>
+                } />
+                <Route path="/checkout" element={
+                  <ProtectedRoute><Checkout /></ProtectedRoute>
                 } />
                 <Route path="/orders" element={
                   <ProtectedRoute><Orders /></ProtectedRoute>
                 } />
-                <Route path="/profile" element={
-                  <ProtectedRoute><Profile /></ProtectedRoute>
+                <Route path="/orders/:id" element={
+                  <ProtectedRoute><Orders /></ProtectedRoute>
                 } />
                 <Route path="/wishlist" element={
                   <ProtectedRoute><Wishlist /></ProtectedRoute>
                 } />
+
+                {/* ADMIN PROTECTED */}
                 <Route path="/admin/dashboard" element={
                   <ProtectedRoute adminOnly={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 } />
-                */}
               </Routes>
 
               {/* TOAST NOTIFICATIONS */}
