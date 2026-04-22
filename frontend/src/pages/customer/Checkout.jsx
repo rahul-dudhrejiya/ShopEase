@@ -48,6 +48,15 @@ const Checkout = () => {
     };
 
     const handlePayment = async () => {
+        // DEBUG — check key is loaded
+        const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+        console.log('Razorpay Key loaded:', razorpayKey);
+
+        if (!razorpayKey) {
+            toast.error('Payment configuration error. Contact support.');
+            return;
+        }
+
         // Validate address
         const requiredFields = ['street', 'city', 'state', 'pincode', 'phone'];
         for (const field of requiredFields) {
@@ -65,7 +74,7 @@ const Checkout = () => {
 
             // STEP 2: Configure Razorpay popup options
             const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                key:  razorpayKey,
                 amount: orderData.order.amount,
                 currency: 'INR',
                 name: 'ShopEase',

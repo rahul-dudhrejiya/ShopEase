@@ -1,6 +1,6 @@
-// WHAT: Root component — defines all page routes
-// WHY: Single place to see the entire app structure
-// HOW: React Router maps URLs to page components
+// // WHAT: Root component — defines all page routes
+// // WHY: Single place to see the entire app structure
+// // HOW: React Router maps URLs to page components
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -9,7 +9,7 @@ import { CartProvider } from './context/CartContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import Navbar from './components/common/Navbar.jsx';
 import ProtectedRoute from './components/common/ProtectedRoute.jsx';
-
+import AIChatWidget from './components/common/AIChatWidget.jsx';
 
 // Customer Pages
 import Home from './pages/customer/Home.jsx';
@@ -24,30 +24,35 @@ import Wishlist from './pages/customer/Wishlist.jsx';
 
 // Admin Pages
 import Dashboard from './pages/admin/Dashboard.jsx';
+import AddProduct from './pages/admin/AddProduct.jsx';
 
 const App = () => {
+  // WHY nest providers?
+  //ThemeProvider wraps everything → theme available everywhere
+  //AuthProvider wraps everything → user state available everywhere
+  //CartProvider needs AuthProvider (uses useAuth inside)
+  //so CartProvider must be INSIDE AuthProvider
   return (
-    // WHY nest providers?
-    // ThemeProvider wraps everything → theme available everywhere
-    // AuthProvider wraps everything → user state available everywhere
-    // CartProvider needs AuthProvider (uses useAuth inside)
-    //   so CartProvider must be INSIDE AuthProvider
     <ThemeProvider>
       <AuthProvider>
         <CartProvider>
           <Router>
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+
+              {/* NAVBAR — shows on every page */}
               <Navbar />
 
+              {/* ALL PAGE ROUTES */}
               <Routes>
-                {/* PUBLIC */}
+
+                {/* PUBLIC ROUTES */}
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* CUSTOMER PROTECTED */}
+                {/* CUSTOMER PROTECTED ROUTES */}
                 <Route path="/cart" element={
                   <ProtectedRoute><Cart /></ProtectedRoute>
                 } />
@@ -64,13 +69,22 @@ const App = () => {
                   <ProtectedRoute><Wishlist /></ProtectedRoute>
                 } />
 
-                {/* ADMIN PROTECTED */}
+                {/* ADMIN PROTECTED ROUTES */}
                 <Route path="/admin/dashboard" element={
                   <ProtectedRoute adminOnly={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 } />
+                <Route path="/admin/add-product" element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AddProduct />
+                  </ProtectedRoute>
+                } />
+
               </Routes>
+
+              {/* ✅ AIChatWidget OUTSIDE Routes — shows on ALL pages */}
+              <AIChatWidget />
 
               {/* TOAST NOTIFICATIONS */}
               <Toaster
@@ -80,9 +94,10 @@ const App = () => {
                   style: {
                     background: '#363636',
                     color: '#fff',
-                  },
+                  }
                 }}
               />
+
             </div>
           </Router>
         </CartProvider>

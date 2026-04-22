@@ -9,6 +9,7 @@ import { ShoppingCart, Heart, Star, ChevronLeft } from 'lucide-react';
 import API from '../../api/axios.js';
 import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import ProductCard from '../../components/common/ProductCard.jsx';
 import toast from 'react-hot-toast';
 
 const ProductDetail = () => {
@@ -19,8 +20,9 @@ const ProductDetail = () => {
     const { addToCart } = useCart();
     const { user } = useAuth();
 
-    const [product, setProduct] = useState(null);   
+    const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
+    const [recommendations, setRecommendations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
@@ -29,9 +31,42 @@ const ProductDetail = () => {
     const [reviewLoading, setReviewLoading] = useState(false);
 
     useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                const { data } = await API.get(`/products/${id}`);
+                setProduct(data.product);
+            } catch {
+                toast.error('Product not found');
+                navigate('/products');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const fetchReviews = async () => {
+            try {
+                const { data } = await API.get(`/reviews/${id}`);
+                setReviews(data.reviews);
+            } catch {
+                console.error('Failed to fetch reviews');
+            }
+        };
+
+        const fetchRecommendations = async () => {
+            try {
+                const { data } = await API.get(`/ai/recommendations/${id}`);
+                setRecommendations(data.recommendations);
+            } catch {
+                console.error('Failed to fetch recommendations');
+            }
+        };
+
         fetchProduct();
         fetchReviews();
-    }, [id]);
+        fetchRecommendations();
+    }, [id, navigate]);
+    // WHY [id, navigate]? These are the only external
+    // values used inside useEffect
 
     const fetchProduct = async () => {
         try {
@@ -276,6 +311,20 @@ const ProductDetail = () => {
 
                 {/* REVIEWS SECTION */}
                 <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+
+                    {recommendations.length > 0 && (
+                        <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+                                Similar Products You May Like
+                            </h2>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {recommendations.map((product) => (
+                                    <ProductCard key={product._id} product={product} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                         Customer Reviews ({reviews.length})
                     </h2>

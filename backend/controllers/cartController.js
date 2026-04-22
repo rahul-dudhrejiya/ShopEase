@@ -126,6 +126,19 @@ export const getCart = async (req, res, next) => {
             });
         }
 
+        // ✅ REMOVE items where product was deleted
+        // WHY? Product might be deleted but still in cart
+        const validItems = cart.items.filter(item => item.product !== null);
+
+        if (validItems.length !== cart.items.length) {
+            // Some items were null — clean them up in DB too
+            cart.items = validItems;
+            cart.totalPrice = validItems.reduce(
+                (total, item) => total + item.price * item.quantity, 0
+            );
+            await cart.save();
+        }
+
         res.status(200).json({
             success: true,
             cart,
