@@ -5,7 +5,7 @@
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
-
+import sendEmail from '../utils/sendEmail.js';
 
 // @desc    Place new order
 // @route   POST /api/orders
@@ -83,6 +83,43 @@ export const placeOrder = async (req, res, next) => {
         cart.items = [];
         cart.totalPrice = 0;
         await cart.save();
+
+        // Send order confirmation email
+        try {
+            await sendEmail({
+                to: req.user.email,
+                subject: `✅ Order Confirmed! #${order._id.toString().slice(-8).toUpperCase()}`,
+                html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #2563EB; padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0;">🛒 ShopEase</h1>
+              <p style="color: #bfdbfe; margin: 5px 0;">Order Confirmed!</p>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <h2 style="color: #1f2937;">Hi ${req.user.name}! 👋</h2>
+              <p style="color: #6b7280;">Your order has been placed successfully!</p>
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #1f2937; margin-top: 0;">Order Details</h3>
+                <p><strong>Order ID:</strong> #${order._id.toString().slice(-8).toUpperCase()}</p>
+                <p><strong>Total Amount:</strong> ₹${order.finalPrice.toLocaleString('en-IN')}</p>
+                <p><strong>Status:</strong> Processing</p>
+              </div>
+              <div style="background: #dbeafe; padding: 15px; border-radius: 8px;">
+                <p style="margin: 0; color: #1d4ed8;">
+                  📦 Your order will be delivered within 3-5 business days!
+                </p>
+              </div>
+            </div>
+            <div style="padding: 20px; text-align: center; color: #9ca3af; font-size: 12px;">
+              <p>Thank you for shopping with ShopEase! 🎉</p>
+            </div>
+          </div>
+        `,
+            });
+        } catch {
+            // Email failed but order is still placed
+            console.log('Email could not be sent');
+        }
 
         res.status(201).json({
             success: true,

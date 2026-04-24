@@ -114,15 +114,40 @@ const Navbar = () => {
                       >
                         My Orders
                       </Link>
+
                       {user.role === 'admin' && (
-                        <Link
-                          to="/admin/dashboard"
-                          className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          onClick={() => setDropdownOpen(false)}
-                        >
-                          Admin Dashboard
-                        </Link>
+                        <>
+                          <Link
+                            to="/admin/dashboard"
+                            className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={() => setDropdownOpen(false)}
+                          >
+                            📊 Dashboard
+                          </Link>
+                          <Link
+                            to="/admin/add-product"
+                            className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={() => setDropdownOpen(false)}
+                          >
+                            ➕ Add Product
+                          </Link>
+                          <Link
+                            to="/admin/orders"
+                            className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={() => setDropdownOpen(false)}
+                          >
+                            📦 Manage Orders
+                          </Link>
+                          <Link
+                            to="/admin/users"
+                            className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={() => setDropdownOpen(false)}
+                          >
+                            👥 Manage Users
+                          </Link>
+                        </>
                       )}
+                      
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"

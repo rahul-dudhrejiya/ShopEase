@@ -26,6 +26,12 @@ import Wishlist from './pages/customer/Wishlist.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import AddProduct from './pages/admin/AddProduct.jsx';
 
+import ManageOrders from './pages/admin/ManageOrders.jsx';
+import ManageUsers from './pages/admin/ManageUsers.jsx';
+import Profile from './pages/customer/Profile.jsx';
+import NotFound from './pages/NotFound.jsx';
+import Footer from './components/common/Footer.jsx';
+
 const App = () => {
   // WHY nest providers?
   //ThemeProvider wraps everything → theme available everywhere
@@ -81,7 +87,21 @@ const App = () => {
                   </ProtectedRoute>
                 } />
 
+                <Route path="/profile" element={
+                  <ProtectedRoute><Profile /></ProtectedRoute>
+                } />
+                <Route path="/admin/orders" element={
+                  <ProtectedRoute adminOnly={true}><ManageOrders /></ProtectedRoute>
+                } />
+                <Route path="/admin/users" element={
+                  <ProtectedRoute adminOnly={true}><ManageUsers /></ProtectedRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+
               </Routes>
+
+              <Footer />
+
 
               {/* ✅ AIChatWidget OUTSIDE Routes — shows on ALL pages */}
               <AIChatWidget />

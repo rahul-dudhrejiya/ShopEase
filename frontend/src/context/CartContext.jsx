@@ -1,8 +1,3 @@
-// WHAT: Global cart state
-// WHY: Cart item count shown in Navbar
-//      Cart data needed in Cart page AND Checkout
-// HOW: Fetches cart from backend, stores in state
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import API from '../api/axios.js';
 import { useAuth } from './AuthContext.jsx';
@@ -14,50 +9,67 @@ export const CartProvider = ({ children }) => {
     const [cartLoading, setCartLoading] = useState(false);
     const { user } = useAuth();
 
-    // Fetch cart when user logs in
+    // ✅ CORRECT — move fetchCart INSIDE useEffect
     useEffect(() => {
+        const fetchCart = async () => {
+            try {
+                setCartLoading(true);
+                const { data } = await API.get('/cart');
+                setCart(cleanCart(data.cart));
+            } catch {
+                console.error('Failed to fetch cart');
+            } finally {
+                setCartLoading(false);
+            }
+        };
+
         if (user) {
             fetchCart();
         } else {
-            // User logged out — clear cart from state
             setCart({ items: [], totalPrice: 0 });
         }
     }, [user]);
-    // WHY [user] dependency? Re-run when user changes
-    // login → fetch cart | logout → clear cart
+    // Clean null products from cart
+    // WHY? Deleted products stay in cart as null
+    const cleanCart = (cartData) => {
+        if (!cartData) return { items: [], totalPrice: 0 };
+        return {
+            ...cartData,
+            items: (cartData.items || []).filter(
+                (item) => item.product !== null && item.product !== undefined
+            ),
+        };
+    };
 
     const fetchCart = async () => {
         try {
             setCartLoading(true);
             const { data } = await API.get('/cart');
-            setCart(data.cart || { items: [], totalPrice: 0 });
-        } catch (error) {
-            console.error('Failed to fetch cart:', error);
+            setCart(cleanCart(data.cart));
+        } catch {
+            console.error('Failed to fetch cart');
         } finally {
             setCartLoading(false);
         }
     };
 
     const addToCart = async (productId, quantity = 1) => {
-        const { data } = await API.post('/cart', {
-            productId,
-            quantity,
-        });
-        setCart(data.cart);
+        const { data } = await API.post('/cart', { productId, quantity });
+        setCart(cleanCart(data.cart));
         return data;
     };
 
     const updateCartItem = async (productId, quantity) => {
-        const { data } = await API.post(`/cart/${productId}`, {
-            quantity,
-        });
-        setCart(data.cart);
+        const { data } = await API.put(`/cart/${productId}`, { quantity });
+        setCart(cleanCart(data.cart));
         return data;
     };
 
     const removeFromCart = async (productId) => {
         const { data } = await API.delete(`/cart/${productId}`);
-        setCart(data.cart);
+        // WHY cleanCart here? Server returns updated cart
+        // We clean it before storing in state
+        setCart(cleanCart(data.cart));
         return data;
     };
 
@@ -66,11 +78,8 @@ export const CartProvider = ({ children }) => {
         setCart({ items: [], totalPrice: 0 });
     };
 
-    // Cart item count for Navbar badge
-    // WHY computed here? Used in Navbar — one calculation
-    const cartCount = cart?.items?.reduce(
-        (total, item) => total + item.quantity, 0
-    ) || 0;
+    const cartCount =
+        cart?.items?.reduce((total, item) => total + item.quantity, 0) || 0;
 
     return (
         <CartContext.Provider

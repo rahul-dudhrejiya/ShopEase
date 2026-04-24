@@ -75,6 +75,8 @@ export const addToCart = async (req, res, next) => {
             });
         }
 
+        cart.items = cart.items.filter(item => item.product !== null);
+
         // STEP 5: Recalculate total price
         cart.totalPrice = cart.items.reduce((total, item) => {
             return total + item.price * item.quantity;
@@ -85,9 +87,10 @@ export const addToCart = async (req, res, next) => {
 
         await cart.save();
 
-        await cart.populate('items.product',
-            'name images price discountPrice stock'
-        );
+        await cart.populate({
+            path: 'items.product',
+            select: 'name images price discountPrice stock brand',
+        });
         // WHY populate? Frontend needs product name
         // and image to display cart items properly
 
@@ -110,11 +113,10 @@ export const getCart = async (req, res, next) => {
     try {
         const cart = await Cart.findOne({
             user: req.user._id
-        }).populate(
-            'items.product',
-            'name images price discountPrice stock'
-        );
-
+        }).populate({
+            path: 'items.product',
+            select: 'name images price discountPrice stock brand',
+        });
         if (!cart) {
             // No cart yet — return empty cart
             return res.status(200).json({
@@ -159,7 +161,7 @@ export const updateCartItem = async (req, res, next) => {
         const { productId } = req.params;
 
         // Validate quantity
-        if (quantity < 1) {
+        if (!quantity || quantity < 1) {
             return res.status(400).json({
                 success: false,
                 message: 'Quantity must be at least 1',
@@ -190,9 +192,11 @@ export const updateCartItem = async (req, res, next) => {
         }
 
         // Update quantity
-        cart.items[itemIndex].quantity = quantity;
+        cart.items[itemIndex].quantity = Number(quantity);
         // WHY = not +=? This is SET not ADD
         // User is explicitly setting new quantity
+
+        cart.items = cart.items.filter(item => item.product !== null);
 
         // Recalculate total
         cart.totalPrice = cart.items.reduce(
@@ -201,10 +205,12 @@ export const updateCartItem = async (req, res, next) => {
         );
 
         await cart.save();
-        await cart.populate(
-            'items.product',
-            'name images price discountPrice stock'
-        );
+
+        await cart.populate({
+            path: 'items.product',
+            select: 'name images price discountPrice stock brand',
+        });
+
 
         res.status(200).json({
             success: true,
@@ -222,46 +228,46 @@ export const updateCartItem = async (req, res, next) => {
 // @route   DELETE /api/cart/:productId
 // @access  Private
 export const removeFromCart = async (req, res, next) => {
-    try {
-        const { productId } = req.params;
+  try {
+    const { productId } = req.params;
 
-        const cart = await Cart.findOne({
-            user: req.user._id
-        });
+    const cart = await Cart.findOne({ user: req.user._id });
 
-        if (!cart) {
-            return res.status(404).json({
-                success: false,
-                message: 'Cart not found',
-            });
-        }
-
-        // Remove item using filter
-        // WHY filter? Creates new array WITHOUT 
-        // the item we want to remove
-        cart.items = cart.items.filter(
-            (item) => item.product.toString() !== productId
-        );
-
-        // Recalculate total
-        cart.totalPrice = cart.items.reduce(
-            (total, item) => total + item.price * item.quantity,
-            0
-        );
-
-        await cart.save();
-
-        res.status(200).json({
-            success: true,
-            message: 'Item removed from cart',
-            cart,
-        });
-
-    } catch (error) {
-        next(error);
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found',
+      });
     }
-};
 
+    // Remove item from cart
+    cart.items = cart.items.filter(
+      (item) => item.product && item.product.toString() !== productId
+    );
+
+    // Recalculate total
+    cart.totalPrice = cart.items.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
+
+    await cart.save();
+
+    // Populate AFTER save so frontend gets full product data
+    await cart.populate({
+      path: 'items.product',
+      select: 'name images price discountPrice stock brand',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Item removed from cart',
+      cart,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // @desc    Clear entire cart
 // @route   DELETE /api/cart
