@@ -17,7 +17,7 @@ const router = express.Router();
 // PUBLIC ROUTES (no login required)
 router.post('/register', register);
 router.post('/login', login);
-router.post('logout', logout);
+router.post('/logout', logout);
 
 // PRIVATE ROUTES (must be logged in)
 // protect runs FIRST, then the controller

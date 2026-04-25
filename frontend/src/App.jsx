@@ -31,6 +31,8 @@ import ManageUsers from './pages/admin/ManageUsers.jsx';
 import Profile from './pages/customer/Profile.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Footer from './components/common/Footer.jsx';
+import OrderDetail from './pages/customer/OrderDetail.jsx';
+
 
 const App = () => {
   // WHY nest providers?
@@ -97,6 +99,9 @@ const App = () => {
                   <ProtectedRoute adminOnly={true}><ManageUsers /></ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />
+                <Route path="/orders/:id" element={
+                  <ProtectedRoute><OrderDetail /></ProtectedRoute>
+                } />
 
               </Routes>
 
