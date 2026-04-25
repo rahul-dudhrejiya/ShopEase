@@ -38,9 +38,21 @@ const app = express();
 // WHY: By default, browsers BLOCK requests from one origin (localhost:5173) to another (localhost:5000)
 // This is a browser security feature called Same-Origin Policy
 // cors() says "I trust requests from FRONTEND_URL, let them through"
+// ✅ CORRECT — allows both with and without trailing slash
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,  // WHY: Allows cookies to be sent with requests
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            process.env.FRONTEND_URL,
+            'http://localhost:5173',
+            'https://shop-ease-ten.vercel.app',
+        ];
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
 }));
 
 // 2. JSON Body Parser
