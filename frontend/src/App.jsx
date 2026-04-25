@@ -32,6 +32,8 @@ import Profile from './pages/customer/Profile.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Footer from './components/common/Footer.jsx';
 import OrderDetail from './pages/customer/OrderDetail.jsx';
+import ManageProducts from './pages/admin/ManageProducts.jsx';
+
 
 
 const App = () => {
@@ -101,6 +103,12 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
                 <Route path="/orders/:id" element={
                   <ProtectedRoute><OrderDetail /></ProtectedRoute>
+                } />
+
+                <Route path="/admin/products" element={
+                  <ProtectedRoute adminOnly={true}>
+                    <ManageProducts />
+                  </ProtectedRoute>
                 } />
 
               </Routes>
