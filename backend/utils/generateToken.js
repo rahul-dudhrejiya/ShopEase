@@ -22,21 +22,12 @@ const generateToken = (res, userId) => {
     // WHY cookie? Auto-sent with every request, safe from XSS
     res.cookie('token', token, {
         httpOnly: true,
-        // WHY httpOnly:true? JavaScript CANNOT read this cookie
-        // Even if attacker injects JS code, they can't steal the token
-
         secure: process.env.NODE_ENV === 'production',
-        // WHY secure? In production, cookie only sent over HTTPS
-        // In development, we use HTTP so we set it false
-
-        sameSite: 'strict',
-        // WHY sameSite:'strict'? Prevents CSRF attacks
-        // Cookie only sent if request comes from same site
-        // CSRF = Cross Site Request Forgery — attacker tricks browser into making requests
-
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        // WHY 'none' in production?
+        // Vercel (frontend) and Render (backend) are different domains
+        // Cross-domain cookies REQUIRE sameSite: 'none' + secure: true
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        // WHY maxAge? Cookie expires after 7 days (in milliseconds)
-        // 7 days × 24 hours × 60 minutes × 60 seconds × 1000 milliseconds
     });
 
     return token;
