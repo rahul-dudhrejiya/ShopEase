@@ -4,7 +4,7 @@ A full-stack E-Commerce application built with the MERN stack,
 featuring AI-powered product search, Razorpay payments,
 and a complete admin dashboard.
 
-![ShopEase Banner](https://raw.githubusercontent.com/rahul-dudhrejiya/ShopEase/main/screenshots/home.png)
+![ShopEase Banner](https://raw.githubusercontent.com/rahul-dudhrejiya/ShopEase/main/screenshots/home.jpg)
 
 ## 🌐 Live Demo
 
