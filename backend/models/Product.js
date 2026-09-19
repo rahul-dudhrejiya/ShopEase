@@ -1,5 +1,3 @@
-// Products need strict structure — price must be number, images must be array, etc.
-
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema(
@@ -20,15 +18,11 @@ const productSchema = new mongoose.Schema(
             type: Number,
             required: [true, 'Please enter product price'],
             min: [0, 'Price cannot be negative'],
-            // WHY min:0? Prevents admin from accidentally entering -500
         },
 
         discountPrice: {
             type: Number,
             default: 0,
-            // WHY separate discountPrice? 
-            // price = original (₹1000), discountPrice = selling price (₹799)
-            // We show both so customer sees the "savings"
         },
 
         category: {
@@ -46,8 +40,6 @@ const productSchema = new mongoose.Schema(
                 'Grocery',
                 'Other',
             ],
-            // WHY enum? Prevents typos like "Electronicss" or "clothng"
-            // Ensures consistent categories for filtering
         },
 
         brand: {
@@ -66,7 +58,7 @@ const productSchema = new mongoose.Schema(
             {
                 public_id: {
                     type: String,
-                    required: true, // WHY: Need this to delete from Cloudinary
+                    required: true,
                 },
                 url: {
                     type: String,
@@ -74,25 +66,20 @@ const productSchema = new mongoose.Schema(
                 },
             }
         ],
-        // WHY array? One product can have multiple images (front, back, side views)
 
         ratings: {
             type: Number,
             default: 0,
-            // WHY store here? Instead of calculating average rating every time from
-            // Review collection (slow), we store pre-calculated average here (fast)
         },
 
         numReviews: {
             type: Number,
             default: 0,
-            // WHY: Shows "4.2 ★ (128 reviews)" — need count for this
         },
 
         isFeatured: {
             type: Boolean,
             default: false,
-            // WHY: Admin can mark products as "Featured" to show on homepage
         },
 
         seller: {
@@ -105,15 +92,8 @@ const productSchema = new mongoose.Schema(
     },
 );
 
-// INDEX for faster search
-// WHAT: Database index is like a book's index — helps find things faster
-// WHY: Without index, MongoDB reads EVERY document to find matches (slow)
-//      With index, it jumps directly to matching documents (fast)
-// When users search "iPhone", MongoDB uses this index to find products instantly
+productSchema.index({ name: 'text', description: 'text' });
 
-productSchema.index({ name: 'text', description: 'text' })
-// WHY 'text' index? Enables full-text search across name and description fields
-
-const Product = mongoose.model('Product', productSchema)
+const Product = mongoose.model('Product', productSchema);
 
 export default Product;

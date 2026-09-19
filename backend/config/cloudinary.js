@@ -1,7 +1,3 @@
-// WHAT: Connects our backend to Cloudinary service
-// WHY: Every image upload needs authentication with Cloudinary
-// HOW: We use our credentials to configure the connection once
-
 import { v2 as cloudinary } from 'cloudinary';
 
 const connectCloudinary = () => {
@@ -11,7 +7,7 @@ const connectCloudinary = () => {
         api_secret: process.env.CLOUDINARY_API_SECRET,
     });
 
-    console.log('✅ Cloudinary Connected');
+    console.log('Cloudinary connection initialized');
 };
 
 export default connectCloudinary;

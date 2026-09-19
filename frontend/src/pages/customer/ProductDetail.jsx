@@ -1,9 +1,8 @@
-// WHAT: Single product page with full details
-// WHY: Users need to see images, description,
-//      reviews before deciding to buy
-// UNIQUE: Image gallery + review system + ratings
+/**
+ * Product detail view with gallery, inventory status, reviews, and dynamic recommendations.
+ */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart, Star, ChevronLeft } from 'lucide-react';
 import API from '../../api/axios.js';
@@ -14,8 +13,6 @@ import toast from 'react-hot-toast';
 
 const ProductDetail = () => {
     const { id } = useParams();
-    // WHY useParams? URL is /products/64abc123
-    // useParams extracts { id: "64abc123" }
     const navigate = useNavigate();
     const { addToCart } = useCart();
     const { user } = useAuth();
@@ -30,45 +27,7 @@ const ProductDetail = () => {
     const [comment, setComment] = useState('');
     const [reviewLoading, setReviewLoading] = useState(false);
 
-    useEffect(() => {
-        const fetchProduct = async () => {
-            try {
-                const { data } = await API.get(`/products/${id}`);
-                setProduct(data.product);
-            } catch {
-                toast.error('Product not found');
-                navigate('/products');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const fetchReviews = async () => {
-            try {
-                const { data } = await API.get(`/reviews/${id}`);
-                setReviews(data.reviews);
-            } catch {
-                console.error('Failed to fetch reviews');
-            }
-        };
-
-        const fetchRecommendations = async () => {
-            try {
-                const { data } = await API.get(`/ai/recommendations/${id}`);
-                setRecommendations(data.recommendations);
-            } catch {
-                console.error('Failed to fetch recommendations');
-            }
-        };
-
-        fetchProduct();
-        fetchReviews();
-        fetchRecommendations();
-    }, [id, navigate]);
-    // WHY [id, navigate]? These are the only external
-    // values used inside useEffect
-
-    const fetchProduct = async () => {
+    const fetchProduct = useCallback(async () => {
         try {
             const { data } = await API.get(`/products/${id}`);
             setProduct(data.product);
@@ -78,16 +37,31 @@ const ProductDetail = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id, navigate]);
 
-    const fetchReviews = async () => {
+    const fetchReviews = useCallback(async () => {
         try {
             const { data } = await API.get(`/reviews/${id}`);
-            setReviews(data.reviews);
+            setReviews(data.reviews || []);
         } catch {
             console.error('Failed to fetch reviews');
         }
-    };
+    }, [id]);
+
+    const fetchRecommendations = useCallback(async () => {
+        try {
+            const { data } = await API.get(`/ai/recommendations/${id}`);
+            setRecommendations(data.recommendations || []);
+        } catch {
+            console.error('Failed to fetch recommendations');
+        }
+    }, [id]);
+
+    useEffect(() => {
+        fetchProduct();
+        fetchReviews();
+        fetchRecommendations();
+    }, [fetchProduct, fetchReviews, fetchRecommendations]);
 
     const handleAddToCart = async () => {
         if (!user) {
@@ -309,22 +283,22 @@ const ProductDetail = () => {
                     </div>
                 </div>
 
+                {/* RECOMMENDATIONS SECTION */}
+                {recommendations.length > 0 && (
+                    <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+                            Similar Products You May Like
+                        </h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {recommendations.map((product) => (
+                                <ProductCard key={product._id} product={product} />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* REVIEWS SECTION */}
                 <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-
-                    {recommendations.length > 0 && (
-                        <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                                Similar Products You May Like
-                            </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {recommendations.map((product) => (
-                                    <ProductCard key={product._id} product={product} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                         Customer Reviews ({reviews.length})
                     </h2>

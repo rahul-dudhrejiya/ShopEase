@@ -1,7 +1,6 @@
-// src/components/common/Navbar.jsx
-// WHAT: Top navigation bar shown on all pages
-// WHY: Users need consistent navigation
-// HOW: Shows different options based on auth state
+/**
+ * Global Navigation Bar component supporting responsive design, theme toggling, and role-based routing.
+ */
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -27,9 +26,6 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-md sticky top-0 z-50">
-      {/* WHY sticky top-0 z-50? 
-          Navbar stays at top while scrolling
-          z-50 ensures it appears above all other elements */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
 
@@ -82,9 +78,6 @@ const Navbar = () => {
                     <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                       {cartCount}
                     </span>
-                    // WHY absolute positioning?
-                    // Badge floats on top-right of cart icon
-                    // -top-2 -right-2 moves it outside the icon
                   )}
                 </Link>
 

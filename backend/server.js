@@ -2,10 +2,13 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+
 import connectDB from './config/db.js';
-import authRoutes from './routes/authRoutes.js';
-import { errorHandler } from './middleware/errorMiddleware.js';
 import connectCloudinary from './config/cloudinary.js';
+import { errorHandler } from './middleware/errorMiddleware.js';
+
+import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
@@ -16,29 +19,15 @@ import couponRoutes from './routes/couponRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 
-
-// Load environment variables FIRST before anything else
-// WHY: All other code may need env variables (like DB URI), so load them first
 dotenv.config();
 
-// Connect to MongoDB
-// WHY here: Before starting the server, make sure DB is ready
+// Initialize database & cloud storage
 connectDB();
-
 connectCloudinary();
 
-// Initialize Express app
-// WHY: express() creates an application object — this IS our server
 const app = express();
 
-// MIDDLEWARE SETUP
-// WHAT is middleware? Code that runs BETWEEN receiving a request and sending a response
-
-// 1. CORS Middleware
-// WHY: By default, browsers BLOCK requests from one origin (localhost:5173) to another (localhost:5000)
-// This is a browser security feature called Same-Origin Policy
-// cors() says "I trust requests from FRONTEND_URL, let them through"
-// ✅ CORRECT — allows both with and without trailing slash
+// CORS configuration
 app.use(cors({
     origin: function (origin, callback) {
         const allowedOrigins = [
@@ -55,59 +44,49 @@ app.use(cors({
     credentials: true,
 }));
 
-// 2. JSON Body Parser
-// WHY: When frontend sends data (like login form), it sends JSON
-// Without this, req.body would be undefined — Express can't read the request body
+// Body parsing middleware
 app.use(express.json());
-
-// 3. URL-Encoded Body Parser
-// WHY: Some forms send data as URL-encoded format (key=value&key2=value2)
-// extended: true allows nested objects
-app.use(express.urlencoded({ extended: true }))
-
-// 4. Cookie Parser
-// WHY: We store JWT in HTTP-only cookies for security
-// Without this, req.cookies would be undefined
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ROUTES
+// Rate limiting for authentication routes to prevent brute-force attacks
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // limit each IP to 50 auth requests per windowMs
+    message: {
+        success: false,
+        message: 'Too many authentication attempts from this IP, please try again after 15 minutes.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
-// We'll uncomment these as we build each feature:
-// import authRoutes from './routes/authRoutes.js';
-app.use('/api/auth', authRoutes);
-// This means: any request to /api/auth/... goes to authRoutes
-
+// Route registration
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', productRoutes);
-
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
-
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 
-// ROOT ROUTE (for testing)
+// Health check endpoint
 app.get('/', (req, res) => {
     res.json({
-        message: '🛒 ShopEase API is running!',
-        tagline: 'Shopping Made Easy!'
+        status: 'healthy',
+        message: 'ShopEase API is running',
+        tagline: 'Shopping Made Easy',
     });
 });
 
-// ERROR MIDDLEWARE
-// WHY at the END: Error middleware must be registered AFTER all routes
-// If any route throws an error, it "falls through" to this handler
-// We'll build this in detail later
+// Centralized error handling
 app.use(errorHandler);
 
-// START SERVER
-// process.env.PORT — on Render, they assign a PORT automatically
-// || 5000 — fallback for local development
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });

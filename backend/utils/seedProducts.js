@@ -1,7 +1,6 @@
-// backend/utils/seedProducts.js
-// WHAT: Adds sample products to database automatically
-// WHY: Instead of adding one by one in Postman
-// HOW: Run once → 20 products added instantly
+/**
+ * Seed utility to populate sample products for development and testing.
+ */
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';

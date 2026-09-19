@@ -1,20 +1,16 @@
-// WHAT: Handles user's product wishlist
-// WHY: Users want to save products for later
-//      Wishlists increase return visits by 30%
-// HOW: One wishlist per user, toggle add/remove
-
 import Wishlist from '../models/Wishlist.js';
 import Product from '../models/Product.js';
 
-// @desc    Toggle product in wishlist
-// @route   POST /api/wishlist/:productId
-// @access  Private
+/**
+ * @desc    Toggle product in wishlist
+ * @route   POST /api/wishlist/:productId
+ * @access  Private
+ */
 export const toggleWishlist = async (req, res, next) => {
     try {
         const { productId } = req.params;
         const userId = req.user._id;
 
-        // Check product exists
         const product = await Product.findById(productId);
         if (!product) {
             return res.status(404).json({
@@ -23,8 +19,7 @@ export const toggleWishlist = async (req, res, next) => {
             });
         }
 
-        // Find or create wishlist
-        let wishlist = await Wishlist.findOne({ user: userId })
+        let wishlist = await Wishlist.findOne({ user: userId });
         if (!wishlist) {
             wishlist = await Wishlist.create({
                 user: userId,
@@ -32,12 +27,9 @@ export const toggleWishlist = async (req, res, next) => {
             });
         }
 
-        // Check if product already in wishlist
         const isWishlisted = wishlist.products.includes(productId);
-        // WHY includes()? Simple check — is this ID in array?
 
         if (isWishlisted) {
-            // REMOVE from wishlist (toggle off)
             wishlist.products = wishlist.products.filter(
                 (id) => id.toString() !== productId
             );
@@ -49,13 +41,12 @@ export const toggleWishlist = async (req, res, next) => {
                 wishlist,
             });
         } else {
-            // ADD to wishlist (toggle on)
             wishlist.products.push(productId);
             await wishlist.save();
 
             return res.status(200).json({
                 success: true,
-                message: 'Added to wishlist ❤️',
+                message: 'Added to wishlist',
                 isWishlisted: true,
                 wishlist,
             });
@@ -66,10 +57,11 @@ export const toggleWishlist = async (req, res, next) => {
     }
 };
 
-
-// @desc    Get user's wishlist
-// @route   GET /api/wishlist
-// @access  Private
+/**
+ * @desc    Get user's wishlist
+ * @route   GET /api/wishlist
+ * @access  Private
+ */
 export const getWishlist = async (req, res, next) => {
     try {
         const wishlist = await Wishlist.findOne({
@@ -78,9 +70,6 @@ export const getWishlist = async (req, res, next) => {
             'products',
             'name price discountPrice images ratings numReviews stock'
         );
-        // WHY populate with specific fields?
-        // We only need display info — not ALL product fields
-        // Keeps response size small = faster API
 
         if (!wishlist) {
             return res.status(200).json({
@@ -100,15 +89,14 @@ export const getWishlist = async (req, res, next) => {
     }
 };
 
-
-// @desc    Clear entire wishlist
-// @route   DELETE /api/wishlist
-// @access  Private
+/**
+ * @desc    Clear entire wishlist
+ * @route   DELETE /api/wishlist
+ * @access  Private
+ */
 export const clearWishlist = async (req, res, next) => {
     try {
-        const wishlist = await Wishlist.findOne({
-            user: req.user._id
-        });
+        const wishlist = await Wishlist.findOne({ user: req.user._id });
 
         if (!wishlist) {
             return res.status(404).json({
@@ -126,6 +114,6 @@ export const clearWishlist = async (req, res, next) => {
         });
 
     } catch (error) {
-        next(error)
+        next(error);
     }
 };

@@ -1,6 +1,3 @@
-// WHAT: Maps URLs to controller functions
-// WHY: Organized URL structure for products
-
 import express from 'express';
 import {
     addProduct,
@@ -17,35 +14,15 @@ import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
-
-// PUBLIC ROUTES
-// (anyone can view products)
+// Public routes
 router.get('/', getAllProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/:id', getProductById);
 
-
-// ADMIN ONLY ROUTES
-// protect → isAdmin → controller
-// Both middlewares run before controller
+// Admin-only routes
 router.get('/admin/all', protect, isAdmin, getAdminProducts);
-
-router.post(
-    '/',
-    protect,
-    isAdmin,
-    upload.array('images', 5), // Max 5 images per product
-    addProduct
-);
-
-router.put(
-    '/:id',
-    protect,
-    isAdmin,
-    upload.array('images', 5),
-    updateProduct
-);
-
+router.post('/', protect, isAdmin, upload.array('images', 5), addProduct);
+router.put('/:id', protect, isAdmin, upload.array('images', 5), updateProduct);
 router.delete('/:id', protect, isAdmin, deleteProduct);
 
 export default router;

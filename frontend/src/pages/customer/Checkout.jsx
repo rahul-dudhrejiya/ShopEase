@@ -1,6 +1,3 @@
-// UNIQUE CONCEPT: Razorpay Frontend Integration
-// This is rare knowledge — most juniors don't know this!
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext.jsx';
@@ -27,7 +24,7 @@ const Checkout = () => {
 
     const shippingPrice = cart.totalPrice > 999 ? 0 : 99;
     const discount = couponData?.discountAmount || 0;
-    const finalPrice = cart.totalPrice + shippingPrice - discount;
+    const finalPrice = Math.max(0, cart.totalPrice + shippingPrice - discount);
 
     const handleAddressChange = (e) => {
         setAddress({ ...address, [e.target.name]: e.target.value });
@@ -48,19 +45,16 @@ const Checkout = () => {
     };
 
     const handlePayment = async () => {
-        // DEBUG — check key is loaded
         const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-        console.log('Razorpay Key loaded:', razorpayKey);
 
         if (!razorpayKey) {
             toast.error('Payment configuration error. Contact support.');
             return;
         }
 
-        // Validate address
         const requiredFields = ['street', 'city', 'state', 'pincode', 'phone'];
         for (const field of requiredFields) {
-            if (!address[field].trim()) {
+            if (!address[field]?.trim()) {
                 toast.error(`Please enter your ${field}`);
                 return;
             }
@@ -68,29 +62,28 @@ const Checkout = () => {
 
         setLoading(true);
         try {
+            // Server securely computes price and validates coupon
             const { data: orderData } = await API.post('/payment/create-order', {
-                amount: finalPrice,
+                couponCode: couponCode || null,
             });
 
-            // STEP 2: Configure Razorpay popup options
             const options = {
-                key:  razorpayKey,
+                key: razorpayKey,
                 amount: orderData.order.amount,
                 currency: 'INR',
                 name: 'ShopEase',
-                description: 'Shopping Made Easy!',
+                description: 'Shopping Made Easy',
                 order_id: orderData.order.id,
-                // STEP 3: Handler runs AFTER successful payment
                 handler: async (response) => {
                     try {
-                        // STEP 4: Verify payment on backend
+                        // 1. Verify signature on backend
                         await API.post('/payment/verify', {
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
                         });
 
-                        // STEP 5: Place order in database
+                        // 2. Place verified order in database
                         const { data: placedOrder } = await API.post('/orders', {
                             shippingAddress: address,
                             paymentInfo: {
@@ -99,36 +92,28 @@ const Checkout = () => {
                                 razorpay_signature: response.razorpay_signature,
                             },
                             couponUsed: couponCode || null,
-                            discountAmount: discount,
                         });
 
-                        // STEP 6: Use coupon (increment counter)
-                        if (couponCode) {
-                            await API.post('/coupons/use', { code: couponCode });
-                        }
-
-                        // STEP 7: Clear cart and redirect
                         await clearCart();
-                        toast.success('Order placed successfully! 🎉');
+                        toast.success('Order placed successfully!');
                         navigate(`/orders/${placedOrder.order._id}`);
 
-                    } catch {
-                        toast.error('Payment verified but order failed. Contact support.');
+                    } catch (err) {
+                        toast.error(err.response?.data?.message || 'Payment verified but order failed. Contact support.');
                     }
                 },
                 prefill: {
-                    name: user.name,
-                    email: user.email,
+                    name: user?.name,
+                    email: user?.email,
                     contact: address.phone,
                 },
                 theme: { color: '#2563EB' },
             };
 
-            // STEP 8: Open Razorpay popup
             const razorpay = new window.Razorpay(options);
             razorpay.open();
-        } catch {
-            toast.error('Payment failed. Please try again.');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Payment initiation failed. Please try again.');
         } finally {
             setLoading(false);
         }

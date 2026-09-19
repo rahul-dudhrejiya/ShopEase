@@ -1,24 +1,16 @@
-// WHAT: Handles all cart operations
-// WHY: Cart is the core of e-commerce —
-//      every purchase starts here
-// HOW: One cart per user, updated on every action
-
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 
-
-// @desc    Add item to cart
-// @route   POST /api/cart
-// @access  Private
+/**
+ * @desc    Add item to cart
+ * @route   POST /api/cart
+ * @access  Private
+ */
 export const addToCart = async (req, res, next) => {
     try {
         const { productId, quantity } = req.body;
         const userId = req.user._id;
-        // req.user comes from protect middleware
-        // WHY not from req.body? Security — 
-        // never trust userId from frontend
 
-        // STEP 1: Find the product
         const product = await Product.findById(productId);
         if (!product) {
             return res.status(404).json({
@@ -27,7 +19,6 @@ export const addToCart = async (req, res, next) => {
             });
         }
 
-        // STEP 2: Check stock availability
         if (product.stock < quantity) {
             return res.status(400).json({
                 success: false,
@@ -35,13 +26,9 @@ export const addToCart = async (req, res, next) => {
             });
         }
 
-        // STEP 3: Find existing cart or create new one
-        let cart = await Cart.findOne({ user: userId })
-        // WHY findOne? Each user has only ONE cart
-        // unique:true in Cart model ensures this
+        let cart = await Cart.findOne({ user: userId });
 
         if (!cart) {
-            // First time adding to cart — create new cart
             cart = await Cart.create({
                 user: userId,
                 items: [],
@@ -49,41 +36,25 @@ export const addToCart = async (req, res, next) => {
             });
         }
 
-        // STEP 4: Check if product already in cart
         const existingItemIndex = cart.items.findIndex(
-            (item) => item.product.toString() === productId
-            // WHY .toString()? MongoDB ObjectId needs 
-            // conversion to string for comparison
+            (item) => item.product?.toString() === productId
         );
 
         if (existingItemIndex > -1) {
-            // Product already in cart → UPDATE quantity
             cart.items[existingItemIndex].quantity += quantity;
-            // WHY +=? Add to existing quantity
-            // If cart has 2, and user adds 3 → total 5
-
         } else {
-            // Product not in cart → ADD new item
             cart.items.push({
                 product: productId,
                 quantity,
-                price: product.discountPrice > 0
-                    ? product.discountPrice
-                    : product.price,
-                // WHY store price here? Lock price at time
-                // of adding to cart — price might change later
+                price: product.discountPrice > 0 ? product.discountPrice : product.price,
             });
         }
 
         cart.items = cart.items.filter(item => item.product !== null);
 
-        // STEP 5: Recalculate total price
         cart.totalPrice = cart.items.reduce((total, item) => {
             return total + item.price * item.quantity;
-            // reduce() loops through all items
-            // multiplies price × quantity for each
-            // adds them all together
-        }, 0);  // 0 = starting value
+        }, 0);
 
         await cart.save();
 
@@ -91,8 +62,6 @@ export const addToCart = async (req, res, next) => {
             path: 'items.product',
             select: 'name images price discountPrice stock brand',
         });
-        // WHY populate? Frontend needs product name
-        // and image to display cart items properly
 
         res.status(200).json({
             success: true,
@@ -105,20 +74,19 @@ export const addToCart = async (req, res, next) => {
     }
 };
 
-
-// @desc    Get user's cart
-// @route   GET /api/cart
-// @access  Private
+/**
+ * @desc    Get user's cart
+ * @route   GET /api/cart
+ * @access  Private
+ */
 export const getCart = async (req, res, next) => {
     try {
-        const cart = await Cart.findOne({
-            user: req.user._id
-        }).populate({
+        const cart = await Cart.findOne({ user: req.user._id }).populate({
             path: 'items.product',
             select: 'name images price discountPrice stock brand',
         });
+
         if (!cart) {
-            // No cart yet — return empty cart
             return res.status(200).json({
                 success: true,
                 cart: {
@@ -128,15 +96,14 @@ export const getCart = async (req, res, next) => {
             });
         }
 
-        // ✅ REMOVE items where product was deleted
-        // WHY? Product might be deleted but still in cart
+        // Clean out deleted products if any
         const validItems = cart.items.filter(item => item.product !== null);
 
         if (validItems.length !== cart.items.length) {
-            // Some items were null — clean them up in DB too
             cart.items = validItems;
             cart.totalPrice = validItems.reduce(
-                (total, item) => total + item.price * item.quantity, 0
+                (total, item) => total + item.price * item.quantity,
+                0
             );
             await cart.save();
         }
@@ -151,16 +118,16 @@ export const getCart = async (req, res, next) => {
     }
 };
 
-
-// @desc    Update item quantity
-// @route   PUT /api/cart/:productId
-// @access  Private
+/**
+ * @desc    Update item quantity
+ * @route   PUT /api/cart/:productId
+ * @access  Private
+ */
 export const updateCartItem = async (req, res, next) => {
     try {
         const { quantity } = req.body;
         const { productId } = req.params;
 
-        // Validate quantity
         if (!quantity || quantity < 1) {
             return res.status(400).json({
                 success: false,
@@ -168,9 +135,7 @@ export const updateCartItem = async (req, res, next) => {
             });
         }
 
-        const cart = await Cart.findOne({
-            user: req.user._id
-        });
+        const cart = await Cart.findOne({ user: req.user._id });
 
         if (!cart) {
             return res.status(404).json({
@@ -179,9 +144,8 @@ export const updateCartItem = async (req, res, next) => {
             });
         }
 
-        // Find item in cart
         const itemIndex = cart.items.findIndex(
-            (item) => item.product.toString() === productId
+            (item) => item.product?.toString() === productId
         );
 
         if (itemIndex === -1) {
@@ -191,14 +155,9 @@ export const updateCartItem = async (req, res, next) => {
             });
         }
 
-        // Update quantity
         cart.items[itemIndex].quantity = Number(quantity);
-        // WHY = not +=? This is SET not ADD
-        // User is explicitly setting new quantity
-
         cart.items = cart.items.filter(item => item.product !== null);
 
-        // Recalculate total
         cart.totalPrice = cart.items.reduce(
             (total, item) => total + item.price * item.quantity,
             0
@@ -211,7 +170,6 @@ export const updateCartItem = async (req, res, next) => {
             select: 'name images price discountPrice stock brand',
         });
 
-
         res.status(200).json({
             success: true,
             message: 'Cart updated',
@@ -223,60 +181,16 @@ export const updateCartItem = async (req, res, next) => {
     }
 };
 
-
-// @desc    Remove item from cart
-// @route   DELETE /api/cart/:productId
-// @access  Private
+/**
+ * @desc    Remove item from cart
+ * @route   DELETE /api/cart/:productId
+ * @access  Private
+ */
 export const removeFromCart = async (req, res, next) => {
-  try {
-    const { productId } = req.params;
-
-    const cart = await Cart.findOne({ user: req.user._id });
-
-    if (!cart) {
-      return res.status(404).json({
-        success: false,
-        message: 'Cart not found',
-      });
-    }
-
-    // Remove item from cart
-    cart.items = cart.items.filter(
-      (item) => item.product && item.product.toString() !== productId
-    );
-
-    // Recalculate total
-    cart.totalPrice = cart.items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-
-    await cart.save();
-
-    // Populate AFTER save so frontend gets full product data
-    await cart.populate({
-      path: 'items.product',
-      select: 'name images price discountPrice stock brand',
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'Item removed from cart',
-      cart,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Clear entire cart
-// @route   DELETE /api/cart
-// @access  Private
-export const clearCart = async (req, res, next) => {
     try {
-        const cart = await Cart.findOne({
-            user: req.user._id
-        });
+        const { productId } = req.params;
+
+        const cart = await Cart.findOne({ user: req.user._id });
 
         if (!cart) {
             return res.status(404).json({
@@ -285,12 +199,51 @@ export const clearCart = async (req, res, next) => {
             });
         }
 
-        // Clear all items
+        cart.items = cart.items.filter(
+            (item) => item.product && item.product.toString() !== productId
+        );
+
+        cart.totalPrice = cart.items.reduce(
+            (total, item) => total + item.price * item.quantity,
+            0
+        );
+
+        await cart.save();
+
+        await cart.populate({
+            path: 'items.product',
+            select: 'name images price discountPrice stock brand',
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Item removed from cart',
+            cart,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * @desc    Clear entire cart
+ * @route   DELETE /api/cart
+ * @access  Private
+ */
+export const clearCart = async (req, res, next) => {
+    try {
+        const cart = await Cart.findOne({ user: req.user._id });
+
+        if (!cart) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cart not found',
+            });
+        }
+
         cart.items = [];
         cart.totalPrice = 0;
         await cart.save();
-        // WHY not delete cart? Keep the cart document
-        // Just empty it — user will add items again
 
         res.status(200).json({
             success: true,
